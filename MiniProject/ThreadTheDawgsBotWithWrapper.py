@@ -6,7 +6,6 @@ import threading
 
 
 SAMPLES_FOLDER = "/home/pi/ecse211/MiniProject/Samples/"
-KEY_BUFFER = 0.25
 threads = {}
 threads["drums"] = None
 drumDurations = [6.0,6.0,4.79,4.0,3.42,3.0]
