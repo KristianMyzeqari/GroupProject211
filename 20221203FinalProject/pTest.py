@@ -8,9 +8,9 @@ import simpleaudio as s
 
 # // CONSTANTS DECLARATION
 
-testMode = True
+testMode = False
 SAMPLES_FOLDER = "/home/pi/ecse211/FinalProject/Samples/"
-beeps = [s.WaveObject.from_wave_file(SAMPLES_FOLDER+"SimpleBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"LongBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"DoubleBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"TripleBeep.wav")]
+beeps = [s.WaveObject.from_wave_file(SAMPLES_FOLDER+"SimpleBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"LongBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"DoubleBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"TripleBeep.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"Error.wav"),s.WaveObject.from_wave_file(SAMPLES_FOLDER+"ErrorSpeech.wav")]
 motors = ((Motor("C"),Motor("B")),(Motor("A"),Motor("D")))
 centerCubeOffset = 1.25
 armOffset = 7.35
@@ -29,10 +29,11 @@ def playBeep(beepIndex):
 
 def userInput(testMode:bool) -> list[list[int],list[int],list[int],list[int],list[int]]:
     
-    userInput = [[],[],[],[],[]]
+    userInput = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
     
     if testMode:
-
+        nOnes = 0
+        nInputs = 0
         print("Please enter binary input:")
         for i in range(0,5):
             for j in range(0,5):
@@ -42,47 +43,107 @@ def userInput(testMode:bool) -> list[list[int],list[int],list[int],list[int],lis
                 while uInput not in ["0","1"]:
                     print("input was not binary, try again:")
                     uInput = input(f"[{i},{j}] > ")
-                userInput[i].append(int(uInput))
+                userInput[i][j] = int(uInput)
+                nInputs += 1
+                if int(uInput) == 1:
+                    nOnes+=1
+                if nOnes == 16:
+                    print("ERROR: Mosaic contains too many cubes (max: 15)")
+                    sleep(0.5)
+                    playBeep(4)
+                    sleep(1.5)
+                    playBeep(5)
+                    return 0
+                    
     else:
             
         touchSensors = [TouchSensor(3),TouchSensor(4),TouchSensor(2)]
         wait_ready_sensors()
+        nOnes = 0
+        tooMany = False
             
         for i in range(0,5):
             for j in range(0,5):
-                binInput = 0 #0 by default
+                binInput = None #0 by default
                 takingInput = True
-                    
+                
+            
+                
+                print("Please give input for " + getName(i, j))
+                
                 while takingInput:
                     
                     if touchSensors[0].is_pressed():
-                        print("pressed - 0")
+                        print("Choose 0 for " + getName(i, j) + "?")
                         binInput = 0
                         playBeep(0)
 
                                 
                     elif touchSensors[1].is_pressed():
-                        print("pressed - 1")
+                        print("Choose 1 for " + getName(i, j) + "?")
                         binInput = 1
                         playBeep(0)
 
                     elif touchSensors[2].is_pressed():
-                        print("pressed - submit")
-                        playBeep(1)
-                        userInput[i].append(binInput)
+                        
+                        if binInput == 1:
+                            nOnes+=1
+                        if binInput == None:
+                            continue
+                        else:
+                            print("")
+                            print(str(binInput) + " chosen for " + getName(i, j))
+                            print("")
+                            userInput[i][j]=(binInput)
+                        if nOnes >= 16:
+                            print("ERROR: Mosaic contains too many cubes (max: 15)")
+                            sleep(0.5)
+                            playBeep(4)
+                            sleep(1.5)
+                            playBeep(5)
+                            return 0
+                        else:
+                            playBeep(1)
                         takingInput = False
 
                     sleep(.25)      
             #done with 1 row
             sleep(1.1)
-            playBeep(2)
+            
                 
         #done with input
+        playBeep(2)
         sleep(1.1)
-        playBeep(3)
+        
 
     return userInput
         
+def getName(row, column):
+    ret = ""
+    if (row == 0):
+        ret = ret + "A"
+    if (row == 1):
+        ret = ret + "B"
+    if (row == 2):
+        ret = ret + "C"
+    if (row == 3):
+        ret = ret + "D"
+    if (row == 4):
+        ret = ret + "E"
+        
+    if (column == 0):
+        ret = ret + "1"
+    if (column == 1):
+        ret = ret + "2"
+    if (column == 2):
+        ret = ret + "3"
+    if (column == 3):
+        ret = ret + "4"
+    if (column == 4):
+        ret = ret + "5"
+        
+    return ret
+    
     
 def detectCubes(amount:int):
     colorSensor = EV3ColorSensor(1)
@@ -97,7 +158,8 @@ def detectCubes(amount:int):
             print(f"{amount - count} cubes loaded")
             sleep(.25)
     print(f"all cubes loaded, ready to take input")
-    playBeep(1)
+    print("")
+    playBeep(3)
     
 
 def motorConfig():
@@ -129,11 +191,18 @@ def moveArmY(y:int):
 
 def main():
     motorConfig()
-    detectCubes(10)
-    uInput = [[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0],[0,1,0,1,0],[1,0,0,0,1]] #userInput(testMode)
+    playBeep(2)
+    detectCubes(15)
     
     uInput = userInput(testMode)
     
+    #uInput = [[1,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[1,0,0,0,1]]
+    
+    while uInput == 0:
+        uInput = userInput(testMode)
+    
+
+
     for i in range(4,-1,-1):
         hasAtleastOne = False
         for j in range(4,-1,-1):
