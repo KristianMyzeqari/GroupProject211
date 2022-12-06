@@ -22,11 +22,17 @@ sleepTime = -0.016*powerVal + 2.5
 
 # // FUNCTIONS
 
+# This function plays a given sound from the beeps sound bank
+# Arguments:
+# beepIndex: index of the beeps list representing the sound to be played
 def playBeep(beepIndex):
     beep = beeps[beepIndex]
     beepObj = beep.play()
 
-
+#This function generates and returns the 2D array containing the mosaic layout based on the user's input
+# Arguments: 
+# testMode: boolean value representing the input type (True for keyboard input, False for touch sensors input)
+# Returns: 2D array containing the mosaic layout based on the user's input
 def userInput(testMode:bool) -> list[list[int],list[int],list[int],list[int],list[int]]:
     
     userInput = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
@@ -117,7 +123,11 @@ def userInput(testMode:bool) -> list[list[int],list[int],list[int],list[int],lis
         
 
     return userInput
-        
+
+# this function transforms grid integer coordinates into the alphanumerical grid coordinates
+# Arguments:
+# row: integer representing row number, column: integer representing column number
+# Returns: String containing alphanumerical grid coordinates
 def getName(row, column):
     ret = ""
     if (row == 0):
@@ -144,7 +154,9 @@ def getName(row, column):
         
     return ret
     
-    
+# This function detects if the number of cubes specified in the argument have been loaded into the system. 
+# Arguments:
+# amount: integer representing the amount of cubes that need to be loaded before the system exits the Cube Loading State   
 def detectCubes(amount:int):
     colorSensor = EV3ColorSensor(1)
     wait_ready_sensors(True)
@@ -161,12 +173,15 @@ def detectCubes(amount:int):
     print("")
     playBeep(3)
     
-
+# This function sets the power of all of the system's motors to the global constant powerVal = 100%
 def motorConfig():
     for t in motors:
         for m in t:
             m.set_limits(power = powerVal)
 
+#This function moves the (wall pusher) by x (grid coordinates) and then goes back to initial position
+# Argument
+# x: integer representing the row the wall pusher has to travel to (grid coordinate)
 def moveArmX(x:int):
     xbar = (4*x - 2) -centerCubeOffset + topArmOffset
     rotationX = angleRatioCoefficient * xbar
@@ -176,7 +191,10 @@ def moveArmX(x:int):
     motors[1][0].set_position_relative(rotationX + extraRewind)
     motors[1][1].set_position_relative(rotationX + extraRewind)
     sleep(sleepTime)
-
+    
+#This function moves the (claw arm pusher) by y (grid coordinates) and then goes back to initial position
+# Argument
+# y: integer representing the row the claw arm pusher has to travel to (grid coordinate)
 def moveArmY(y:int):
     ybar = (4*y - 2) -centerCubeOffset + armOffset
     rotationY = angleRatioCoefficient * ybar
@@ -196,13 +214,11 @@ def main():
     
     uInput = userInput(testMode)
     
-    #uInput = [[1,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[1,0,0,0,1]]
-    
     while uInput == 0:
         uInput = userInput(testMode)
     
 
-
+    # building algorithm
     for i in range(4,-1,-1):
         hasAtleastOne = False
         for j in range(4,-1,-1):
